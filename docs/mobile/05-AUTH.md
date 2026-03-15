@@ -19,8 +19,11 @@ Tokens live in `expo-secure-store`. Redux only tracks boolean flags (isAuthentic
 User has no tokens (fresh install, or logged out)
 
 1. Enter phone + password
-   └── POST /auth/login → server verifies against core
-   └── Server sends OTP via SMS
+   └── Collect device attestation (Play Integrity on Android / App Attest on iOS)
+   └── POST /auth/login → { phone, password, attestationToken }
+   └── Server verifies attestation before proceeding
+   └── Jailbroken/rooted device → login blocked with error
+   └── Server verifies credentials against core → sends OTP via SMS
 
 2. Enter OTP
    └── POST /auth/verify-otp → server verifies OTP hash
@@ -89,9 +92,12 @@ User has tokens + PIN set, app was backgrounded or killed
 │  ├── Valid → API calls work                     │
 │  └── Expired → auth middleware auto-refreshes   │
 │                                                  │
-│  Refresh Token (360 days)                       │
+│  Refresh Token (30 days, rotated on use)         │
 │  ├── Valid → can get new access token           │
-│  └── Expired → user must login again (password) │
+│  │           (old token invalidated immediately)│
+│  ├── Reused after rotation → session revoked   │
+│  │           (theft indicator)                  │
+│  └── Expired or idle >30 days → login required │
 │                                                  │
 │  PIN / Biometric                                 │
 │  └── Only gates UI access, not API access       │

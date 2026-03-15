@@ -60,11 +60,29 @@ App launch → GET /onboarding/status
     ├── No application → start fresh (phone OTP)
     ├── IN_PROGRESS → route to current_step
     ├── SUBMITTED → route to polling screen
+    ├── MANUAL_REVIEW_REQUIRED → route to polling screen (awaiting manual backoffice review)
     ├── APPROVED → route to login
     └── REJECTED → route to rejection screen (with retry)
 ```
 
 This works even after app reinstall — state is server-side, identified by phone number + device.
+
+---
+
+## KYC SDK Failure Fallback
+
+If the KYC SDK fails to produce a valid result after **2 attempts** (degraded document, poor camera, liveness check failed twice):
+
+```
+1. App exits the KYC SDK
+2. User is shown a manual entry screen:
+   └── Upload any image of the document (no liveness required)
+   └── Fill in document data manually (no OCR pre-fill)
+3. Application is flagged MANUAL_REVIEW_REQUIRED in backend
+4. Backoffice manually reviews uploaded image + submitted data before approval
+```
+
+This ensures customers with degraded documents or older hardware are not permanently blocked from onboarding. All manual-entry applications go to a dedicated backoffice queue.
 
 ---
 

@@ -17,6 +17,7 @@ Redux Toolkit with RTK Query for all server state. No mixing patterns.
 │  │  onboarding   │  │  onboardingApi        │ │
 │  │  ui           │  │  accountsApi          │ │
 │  │  app          │  │  cardsApi             │ │
+│  │               │  │  transfersApi         │ │
 │  │               │  │  notificationsApi     │ │
 │  │               │  │  settingsApi          │ │
 │  └──────────────┘  └──────────────────────┘ │
@@ -55,6 +56,7 @@ import { authApi } from '@api/endpoints/auth.api';
 import { onboardingApi } from '@api/endpoints/onboarding.api';
 import { accountsApi } from '@api/endpoints/accounts.api';
 import { cardsApi } from '@api/endpoints/cards.api';
+import { transfersApi } from '@api/endpoints/transfers.api';
 import { notificationsApi } from '@api/endpoints/notifications.api';
 import { settingsApi } from '@api/endpoints/settings.api';
 import authReducer from './slices/auth.slice';
@@ -73,6 +75,7 @@ export const store = configureStore({
     [onboardingApi.reducerPath]: onboardingApi.reducer,
     [accountsApi.reducerPath]: accountsApi.reducer,
     [cardsApi.reducerPath]: cardsApi.reducer,
+    [transfersApi.reducerPath]: transfersApi.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
     [settingsApi.reducerPath]: settingsApi.reducer,
   },
@@ -82,6 +85,7 @@ export const store = configureStore({
       .concat(onboardingApi.middleware)
       .concat(accountsApi.middleware)
       .concat(cardsApi.middleware)
+      .concat(transfersApi.middleware)
       .concat(notificationsApi.middleware)
       .concat(settingsApi.middleware)
       .concat(authMiddleware),

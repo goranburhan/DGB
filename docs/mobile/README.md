@@ -10,3 +10,4 @@
 | [05-AUTH.md](./05-AUTH.md) | Login, PIN, biometrics, session lifecycle, secure storage |
 | [06-FEATURES.md](./06-FEATURES.md) | Accounts, cards, notifications, settings |
 | [07-REUSABILITY.md](./07-REUSABILITY.md) | Component layers, hooks, validation pattern, RTL, error handling |
+| [08-AI-WORKFLOW.md](./08-AI-WORKFLOW.md) | How AI agents build screens, handle changes, form pattern, RTL checklist, handoff |

@@ -24,6 +24,31 @@
 
 ---
 
+## Transfers
+
+### Transfer Form
+- Select source account
+- Select beneficiary type: own account / same-bank customer / inter-bank
+- Enter amount (IQD)
+- Optional: note / description
+
+### Pre-Check
+- `POST /transfers/pre-check` → returns `{ requiresSelfie, fee, limits }`
+- Shows fee and transfer limits before submission
+- If `requiresSelfie: true` → opens selfie verification flow (via `POST /security/verify-selfie` with `context: 'transfer'`) before allowing submission
+
+### Submit
+- `POST /transfers/submit` — includes optional `selfieToken` if selfie was completed
+- On success: confirmation screen + push notification
+- On failure: localized error from core (insufficient funds, account frozen, etc.)
+
+### Transfer History
+- Accessible from Account Detail screen
+- `GET /transfers/history` — cursor-paginated, same row format as transactions
+- Filter by date range
+
+---
+
 ## Cards
 
 ### Card Orders List
@@ -86,9 +111,15 @@ Notification types:
 - `POST /auth/reset-password`
 - On success → toast confirmation
 
-### Delete App User
-- "Delete my account" → confirmation dialog
-- Explains: "This removes your app access. To close your bank account, visit your nearest branch."
-- Confirm → API call to deactivate user
-- Clear all local storage → route to login
-- Bank account remains active in core — only the digital user is removed
+### Deactivate Digital Access
+- "Remove app access" → confirmation dialog
+- Explains: "This removes your digital banking access. Your bank account remains open. To close your bank account, visit your nearest branch."
+- Confirm → `POST /api/v1/settings/deactivate-digital-access`
+- Server: revokes all sessions, deregisters FCM token, logs action to audit
+- Client: clears all local storage → routes to login
+- Bank account and all balances untouched in core
+
+### FCM Token Lifecycle
+- Registered on login: `POST /notifications/register-token` (sends `{ fcmToken, deviceId, platform }`)
+- Refreshed automatically via `expo-notifications` token refresh listener (FCM can rotate tokens without notice)
+- Deregistered on logout and on deactivate-digital-access

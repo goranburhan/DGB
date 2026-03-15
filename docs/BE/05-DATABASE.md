@@ -53,7 +53,11 @@ CREATE TABLE onboarding_applications (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     phone_number    VARCHAR(20) NOT NULL,
     current_step    VARCHAR(50) NOT NULL,
-    status          VARCHAR(30) NOT NULL,      -- 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'REJECTED', 'FAILED', 'NEEDS_MANUAL_REVIEW'
+    -- Application lifecycle (backoffice visibility)
+    status          VARCHAR(30) NOT NULL,      -- 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'REJECTED', 'FAILED', 'NEEDS_MANUAL_REVIEW', 'EXPIRED'
+    -- Core orchestration state (saga runner only — separate concern from status)
+    saga_state      VARCHAR(40),               -- 'STARTED' | 'PRE_CUSTOMER_CREATED' | 'CUSTOMER_CREATED' | 'ACCOUNT_CREATED' | 'FAILED' | 'NEEDS_MANUAL_REVIEW' | 'COMPLETED'
+    pre_cif         VARCHAR(100),              -- ICSFS pre-customer reference, written after saga step 1 succeeds, used by step 2 on resume
     personal_info   JSONB,                     -- Encrypted, temporary until sent to core
     documents_ref   JSONB,
     kyc_result      JSONB,
@@ -64,11 +68,31 @@ CREATE TABLE onboarding_applications (
     reviewed_at     TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    expires_at      TIMESTAMPTZ NOT NULL
+    expires_at      TIMESTAMPTZ NOT NULL       -- Applications expire 90 days after creation if not completed
 );
 
 CREATE INDEX idx_onboarding_status ON onboarding_applications (status, created_at DESC);
 CREATE INDEX idx_onboarding_phone ON onboarding_applications (phone_number);
+-- Prevent two active applications for the same phone number
+CREATE UNIQUE INDEX idx_onboarding_unique_active ON onboarding_applications (phone_number)
+    WHERE status = 'IN_PROGRESS';
+
+-- ============================================
+-- PUSH TOKENS
+-- ============================================
+CREATE TABLE push_tokens (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id     VARCHAR(100) NOT NULL,
+    device_id       VARCHAR(200) NOT NULL,
+    fcm_token       TEXT NOT NULL,
+    platform        VARCHAR(10) NOT NULL,      -- 'ios' | 'android'
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (device_id)
+);
+
+CREATE INDEX idx_push_tokens_customer ON push_tokens (customer_id) WHERE is_active = TRUE;
 
 -- ============================================
 -- NOTIFICATIONS
@@ -129,6 +153,33 @@ CREATE TABLE feature_flags (
 );
 
 -- ============================================
+-- BACKOFFICE USERS
+-- ============================================
+CREATE TABLE backoffice_users (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username        VARCHAR(100) NOT NULL UNIQUE,
+    password_hash   VARCHAR(200) NOT NULL,     -- bcrypt
+    role            VARCHAR(30) NOT NULL,       -- 'REVIEWER' | 'APPROVER' | 'AUDITOR'
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_by      VARCHAR(100),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_login_at   TIMESTAMPTZ
+);
+
+-- ============================================
+-- LOGIN ATTEMPTS (for lockout tracking)
+-- ============================================
+CREATE TABLE login_attempts (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    phone_number    VARCHAR(20) NOT NULL,
+    ip_address      INET,
+    success         BOOLEAN NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_login_attempts_phone ON login_attempts (phone_number, created_at DESC);
+
+-- ============================================
 -- OTP TRACKING
 -- ============================================
 CREATE TABLE otp_requests (
@@ -167,10 +218,13 @@ CREATE INDEX idx_otp_phone ON otp_requests (phone_number, purpose, created_at DE
 |-------|-----------|--------|
 | audit_logs | 7 years minimum | CBI compliance |
 | user_sessions | 90 days after expiry | Cleanup |
-| onboarding_applications | 1 year after completion | Disputes |
+| onboarding_applications | 1 year after completion | Disputes. Expire (status → EXPIRED) 90 days after creation if not completed. Applications with non-null `pre_cif` at expiry flagged for backoffice cleanup. |
 | notifications | 6 months | Only show recent |
 | card_orders | 2 years | Disputes |
 | otp_requests | 24 hours | Short-lived |
+| push_tokens | Until deregistered | Deregistered on logout and deactivate-digital-access |
+| backoffice_users | Until deactivated | is_active = false on offboarding |
+| login_attempts | 90 days | Lockout window calculation |
 
 ---
 

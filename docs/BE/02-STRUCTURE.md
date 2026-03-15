@@ -15,6 +15,7 @@ libs/
 ├── sanctions/          ← Sanctions screening
 ├── accounts/           ← Balance, transactions, account switching
 ├── cards/              ← Physical card ordering
+├── transfers/          ← Fund transfers (pre-check, submit, history)
 ├── notifications/      ← FCM push, in-app center, SMS dispatch
 ├── backoffice/         ← Review queues, 360 view, KYC approval
 ├── audit/              ← Append-only audit trail
@@ -60,16 +61,25 @@ Start → Phone verification (OTP)
 Dependencies: `core-adapter`, `kyc`, `sanctions`, `notifications`, `storage`, `audit`
 
 ### `kyc`
-Abstraction over KYC providers. Provider-agnostic interface. Pick Sumsub, Regula, or GBG via config.
+Abstraction over KYC providers. Provider-agnostic interface. Pick Sumsub, Regula, or GBG via config (`KYC_PROVIDER`, `KYC_PROVIDER_DEPLOYMENT_MODE: cloud | on-prem`).
+
+**Circuit breaker:** If the KYC provider returns errors on 100 consecutive requests, the circuit opens. Onboarding halts at the selfie step with a "try again later" error. Ops alerted via Prometheus alert rule. Circuit resets after 60s cooldown.
 
 ### `sanctions`
-Sanctions screening during onboarding and data updates. Provider-agnostic interface (Dow Jones, Refinitiv, ComplyAdvantage).
+Sanctions screening during onboarding submission. Provider-agnostic API calls — configure via `SANCTIONS_API_KEY` and `SANCTIONS_PROVIDER_URL`. Screens applicant full name + national ID number against configured lists (UN Security Council, OFAC SDN, EU Consolidated, and any CBI-mandated domestic list). Matching algorithm: exact + fuzzy (score threshold configurable). Hit → application flagged for manual review, not auto-rejected.
 
 ### `accounts`
 Balance, transactions (cursor paginated), account switching. All reads from core, no local storage.
 
 ### `cards`
 Physical card ordering — submit to backoffice queue, track status.
+
+### `transfers`
+Fund transfers — pre-check (returns selfie requirement, fee, limits), submit (executes via core), transfer history. Selfie authorization rule applied here (250K IQD threshold / first-receiver-today logic).
+
+Dependencies: `core-adapter`, `audit`, `notifications`
+
+Phase 1 scope.
 
 ### `notifications`
 FCM push, SMS (bank's gateway), in-app center (PostgreSQL). Unified `send()` with channel selection and i18n templates.
@@ -110,5 +120,6 @@ onboarding (core-adapter, kyc, sanctions, storage, notifications, audit)
 auth (core-adapter, kyc, notifications, audit)
 accounts (core-adapter, audit)
 cards (core-adapter, notifications, audit)
+transfers (core-adapter, audit, notifications)
 backoffice (core-adapter, kyc, audit, storage)
 ```

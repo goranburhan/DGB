@@ -17,14 +17,13 @@ Back:    /api/v1/backoffice/*   (used by backoffice app, separate auth role)
 
 ```
 # Auth
-POST   /api/v1/auth/register              ← Start onboarding (phone + OTP)
+POST   /api/v1/auth/register              ← Start onboarding (phone + OTP). Returns 409 { action: 'RESUME' } if IN_PROGRESS application already exists for this phone.
 POST   /api/v1/auth/verify-otp            ← Verify OTP code
 POST   /api/v1/auth/login                 ← Login with credentials
 POST   /api/v1/auth/refresh               ← Refresh access token
 POST   /api/v1/auth/logout                ← Invalidate session
 POST   /api/v1/auth/forgot-password       ← Initiate password reset
-POST   /api/v1/auth/reset-password        ← Complete password reset with selfie
-POST   /api/v1/auth/verify-selfie         ← Selfie verification for sensitive ops
+POST   /api/v1/auth/reset-password        ← Complete password reset (calls /security/verify-selfie internally)
 
 # Onboarding
 GET    /api/v1/onboarding/status          ← Current onboarding step
@@ -47,11 +46,20 @@ GET    /api/v1/cards/orders               ← List card orders + status
 GET    /api/v1/notifications              ← In-app notification center (paginated)
 PATCH  /api/v1/notifications/:id/read     ← Mark as read
 POST   /api/v1/notifications/read-all     ← Mark all as read
+POST   /api/v1/notifications/register-token ← Register/refresh FCM push token ({ fcmToken, deviceId, platform })
 
 # Settings
 GET    /api/v1/settings                   ← User settings (language, notifications)
 PATCH  /api/v1/settings                   ← Update settings
-POST   /api/v1/account/close              ← Request account closure
+POST   /api/v1/settings/deactivate-digital-access  ← Remove digital access only (core account untouched, sessions revoked, FCM deregistered, audited)
+
+# Transfers
+POST   /api/v1/transfers/pre-check       ← Returns { requiresSelfie, fee, limits }
+POST   /api/v1/transfers/submit          ← Execute transfer (optional selfie token in body)
+GET    /api/v1/transfers/history         ← Cursor-paginated transfer history
+
+# Security
+POST   /api/v1/security/verify-selfie    ← Reusable selfie verification. Body: { context: 'forgot_password' | 'transfer', selfieToken: string }. Backend applies per-context validation rules.
 
 # Backoffice
 GET    /api/v1/backoffice/queue/onboarding         ← Pending onboarding reviews
@@ -137,6 +145,7 @@ Accept-Language: ar | ku | en     ← Determines response language
 | Auth (refresh) | 30 requests | per minute |
 | Onboarding | 10 requests | per minute |
 | Accounts (read) | 60 requests | per minute |
+| Transfers | 10 requests | per minute |
 | Backoffice | 120 requests | per minute |
 
 Per-user (by JWT subject).

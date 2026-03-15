@@ -31,20 +31,44 @@ Bank's On-Prem Server(s)
 version: '3.8'
 
 services:
-  api:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/certs:/etc/nginx/certs:ro
+    depends_on: [api1, api2]
+    restart: always
+
+  api1:
     build: ./apps/api
-    ports: ["3000:3000"]
     environment:
       - DATABASE_URL=postgresql://corebridge:secret@postgres:5432/corebridge
       - ICSFS_WSDL_URL=http://core-server:8080/wsdl
       - KYC_PROVIDER=sumsub
+      - KYC_PROVIDER_DEPLOYMENT_MODE=cloud
       - STORAGE_BACKEND=minio
       - JWT_SECRET=${JWT_SECRET}
+      - DEEP_LINK_SCHEME=${DEEP_LINK_SCHEME}
       - NODE_ENV=production
     depends_on: [postgres, minio]
     restart: always
-    deploy:
-      replicas: 2
+
+  api2:
+    build: ./apps/api
+    environment:
+      - DATABASE_URL=postgresql://corebridge:secret@postgres:5432/corebridge
+      - ICSFS_WSDL_URL=http://core-server:8080/wsdl
+      - KYC_PROVIDER=sumsub
+      - KYC_PROVIDER_DEPLOYMENT_MODE=cloud
+      - STORAGE_BACKEND=minio
+      - JWT_SECRET=${JWT_SECRET}
+      - DEEP_LINK_SCHEME=${DEEP_LINK_SCHEME}
+      - NODE_ENV=production
+    depends_on: [postgres, minio]
+    restart: always
 
   backoffice:
     build: ./apps/backoffice
@@ -100,9 +124,10 @@ GitHub Actions
     ├── 1. Lint + Type Check
     ├── 2. Run tests
     ├── 3. Validate OpenAPI spec matches Swagger output
-    ├── 4. Build all libs + apps
-    ├── 5. Build Docker image
-    └── 6. Push to private Docker registry
+    ├── 4. Run DB migrations (typeorm migration:run)
+    ├── 5. Build all libs + apps
+    ├── 6. Build Docker image
+    └── 7. Push to private Docker registry
 
 Deployment to bank:
     ├── Pull latest Docker image
@@ -132,8 +157,10 @@ MINIO_USER / MINIO_PASSWORD
 ICSFS_USERNAME / ICSFS_PASSWORD
 KYC_API_KEY          ← Sumsub/Regula
 SANCTIONS_API_KEY
+SANCTIONS_PROVIDER_URL
 FCM_SERVER_KEY       ← Firebase push
 ENCRYPTION_KEY       ← AES-256 for PII
+DEEP_LINK_SCHEME     ← Per-bank deployment (e.g. 'rafidain'). Used by notifications module to build push deeplink URLs. Never hardcoded in app code.
 ```
 
 Managed via Docker secrets or `.env` files mounted as volumes.

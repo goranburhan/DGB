@@ -34,9 +34,12 @@ Mobile App                     API                        Core
 
 | Measure | Implementation |
 |---------|---------------|
-| JWT expiry | Access: 30 min, Refresh: 360 days |
+| JWT expiry | Access: 30 min, Refresh: 30 days (rotated on use; idle >30 days → revoked on next use) |
 | OTP expiry | 5 minutes, max 3 attempts |
 | Password hashing | bcrypt (12 rounds) |
+| Password policy | Min 8 chars, at least 1 letter + 1 digit, top-1000 common passwords rejected |
+| Account lockout | 5 failed login attempts → 15-min lockout. 10 further failures → account locked, backoffice unlock required. Tracked in `login_attempts` table. |
+| Refresh token rotation | Old token invalidated on each use. Reuse of a rotated token revokes the entire session (theft indicator). |
 | PII encryption | AES-256-GCM at application level |
 | HTTPS | TLS 1.2+ enforced |
 | CORS | Whitelist bank's domains only |
@@ -45,6 +48,9 @@ Mobile App                     API                        Core
 | SQL injection | TypeORM parameterized queries |
 | Audit logging | Every sensitive operation logged |
 | Session management | Single active session per device, revocable |
+| Device attestation | Play Integrity (Android) + App Attest (iOS) verified at login before JWT is issued. Jailbroken/rooted devices blocked. |
+| Certificate pinning | TLS cert pinned in mobile app. Rotation procedure: deploy new pin 30 days before cert expiry, remove old pin after expiry window. |
+| Backoffice sessions | Access token: 8h (full workday). No refresh token. Re-authentication required per session. |
 | Selfie verification | Dynamic, compliance-driven. Required on: (1) password reset, (2) transactions where amount ≥ 250K IQD, (3) transactions to a receiver not paid today. Skipped for low-value familiar transfers (< 250K IQD to a receiver already paid today). |
 
 ---

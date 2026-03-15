@@ -34,7 +34,7 @@ App Launch
     │   └── Has onboarding in progress? (check server)
     │       └── YES → router.replace('/(onboarding)/polling') or resume step
     │
-    ├── After login (phone+pass+selfie) →
+    ├── After login (phone+pass+OTP) →
     │   ├── First time → /(pin)/setup → /(main)
     │   └── PIN already set → /(main)
     │
@@ -50,13 +50,15 @@ App Launch
 Push notifications and external links route to specific screens.
 
 ```
-corebridge://                         → index (auth check)
-corebridge://accounts/:id             → account detail
-corebridge://accounts/:id/transactions → transaction list
-corebridge://notifications            → notification center
-corebridge://cards/orders             → card orders
-corebridge://onboarding/status        → onboarding polling
+{DEEP_LINK_SCHEME}://                         → index (auth check)
+{DEEP_LINK_SCHEME}://accounts/:id             → account detail
+{DEEP_LINK_SCHEME}://accounts/:id/transactions → transaction list
+{DEEP_LINK_SCHEME}://notifications            → notification center
+{DEEP_LINK_SCHEME}://cards/orders             → card orders
+{DEEP_LINK_SCHEME}://onboarding/status        → onboarding polling
 ```
+
+> Deep link scheme is configured at build time via `EXPO_PUBLIC_DEEP_LINK_SCHEME` (e.g. `rafidain`). Never hardcode `corebridge://` in app code or notification payloads. The backend notifications module reads `DEEP_LINK_SCHEME` from env when constructing push notification route URLs.
 
 ### Push Notification → Deep Link
 

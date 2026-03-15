@@ -12,6 +12,7 @@
 | [08-AI-WORKFLOW.md](./08-AI-WORKFLOW.md) | Contract-first dev, Figma → agent flow, validation sync, agent handoff |
 | [09-BUSINESS-OPERATIONS.md](./09-BUSINESS-OPERATIONS.md) | Exit strategy, build phases, what makes it sellable |
 | [10-CORE-ADAPTER.md](../10-CORE-ADAPTER.md) | Core adapter deep-dive — ICSFS integration, failure handling, saga pattern, impedance mismatch |
+| [11-MONITORING-ALERTING.md](../11-MONITORING-ALERTING.md) | Monitoring, alerting, dashboards — Prometheus + Grafana + Loki + Telegram/Email/Slack |
 
 ### Mobile App
 
