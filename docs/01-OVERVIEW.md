@@ -1,16 +1,16 @@
 # Corebridge — Overview & System Architecture
 
-**Version:** 0.1 (Draft) | **Date:** March 10, 2026
+**Version:** 0.2 | **Date:** March 15, 2026
 
 ---
 
 ## Overview
 
-Corebridge is a digital banking platform that sits on top of legacy core banking systems (ICS BANKS by ICSFS). It provides retail customers with digital onboarding, account management, and self-service banking via a mobile app, while giving bank employees a backoffice for manual review and customer management.
+Corebridge is a digital banking platform built on top of ICS BANKS (ICSFS) legacy core. It provides retail customers with digital onboarding, account management, and self-service banking via a mobile app, and gives bank employees a backoffice for manual review and customer management.
 
-**Business Model:** License fee + setup cost + customization cost (3 months per bank)
+**Business Model:** Build for one bank → sell the company + software to that bank (acquisition/exit).
 
-**Target Market:** Iraqi retail banks (Islamic and conventional)
+**Target Market:** Iraqi retail bank (Islamic or conventional) — single bank, TBD.
 
 **Languages:** Arabic (default, RTL), Sorani Kurdish (RTL), English (LTR)
 
@@ -28,8 +28,8 @@ Corebridge is a digital banking platform that sits on top of legacy core banking
                        │ + FCM Push Notifications
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    API GATEWAY                              │
-│               (NestJS Application)                          │
+│                    NESTJS BACKEND                            │
+│               (Single Nx Monorepo)                          │
 │                                                             │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐          │
 │  │  Auth   │ │Onboard- │ │Accounts │ │  Cards  │          │
@@ -38,34 +38,13 @@ Corebridge is a digital banking platform that sits on top of legacy core banking
 │       │           │           │           │                │
 │  ┌────┴───────────┴───────────┴───────────┴────┐           │
 │  │           DOMAIN SERVICES LAYER              │           │
-│  │     (Clean business logic, no SOAP here)     │           │
 │  └────────────────────┬────────────────────────┘           │
 │                       │                                     │
 │  ┌────────────────────┴────────────────────────┐           │
 │  │              CORE ADAPTER                    │           │
-│  │    (Single module, internally separated)     │           │
-│  │                                              │           │
-│  │  ┌────────────────────────────────────────┐  │           │
-│  │  │  /interfaces                           │  │           │
-│  │  │  Clean TypeScript interfaces that      │  │           │
-│  │  │  domain services depend on             │  │           │
-│  │  └────────────────────────────────────────┘  │           │
-│  │                                              │           │
-│  │  ┌────────────────────────────────────────┐  │           │
-│  │  │  /mappers (ACL logic)                  │  │           │
-│  │  │  - Field mapping & transformation      │  │           │
-│  │  │  - Corebridge models ←→ ICSFS models   │  │           │
-│  │  │  - Error code normalization            │  │           │
-│  │  │  - Response validation                 │  │           │
-│  │  └────────────────────────────────────────┘  │           │
-│  │                                              │           │
-│  │  ┌────────────────────────────────────────┐  │           │
-│  │  │  /soap-client                          │  │           │
-│  │  │  - WSDL-generated TypeScript clients   │  │           │
-│  │  │  - Connection pooling                  │  │           │
-│  │  │  - Retry logic & circuit breaker       │  │           │
-│  │  │  - Request/response logging            │  │           │
-│  │  └────────────────────────────────────────┘  │           │
+│  │  ┌──────────────┐ ┌──────────┐ ┌──────────┐ │           │
+│  │  │  interfaces/  │ │ mappers/ │ │soap-client││           │
+│  │  └──────────────┘ └──────────┘ └──────────┘ │           │
 │  └────────────────────┬────────────────────────┘           │
 │                       │                                     │
 │  ┌─────────┐ ┌───────┴──┐ ┌──────────┐ ┌──────────┐      │
@@ -78,7 +57,6 @@ Corebridge is a digital banking platform that sits on top of legacy core banking
 ┌─────────────────────────────────────────────────────────────┐
 │                  ICS BANKS CORE                              │
 │               (Bank's on-prem server)                       │
-│                                                             │
 │  Customer Master · Accounts · Transactions · Cards          │
 │  KYC Storage · Sanctions · All compliance data              │
 └─────────────────────────────────────────────────────────────┘
@@ -103,17 +81,17 @@ Corebridge is a digital banking platform that sits on top of legacy core banking
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Backend framework | NestJS | Module system, DI, built-in Swagger, guards/interceptors |
-| Mobile framework | React Native | Shared JS context with backend, cross-platform |
+| Mobile framework | React Native | Cross-platform, shared JS ecosystem |
 | Backoffice | React (web) | Separate app for bank employees |
 | Database | PostgreSQL | Audit logs, sessions, config. NOT source of truth for banking data |
 | Source of truth | ICS BANKS Core | All customer, account, transaction, compliance data |
 | Document storage | Core + local object storage | Dual storage for safety |
-| Auth | JWT (access + refresh tokens) | Stateless, pluggable |
+| Auth | JWT (access + refresh tokens) | Stateless |
 | Core integration | Direct SOAP via WSDL-generated clients | CoreAdapter keeps business logic clean |
 | Notifications | FCM (push) + in-app center + SMS (bank's gateway) | |
 | Monitoring | Grafana + Prometheus | On-prem friendly |
-| Deployment | On-prem per bank, Docker | Bank controls their infra |
-| Distribution | `@corebridge/*` npm packages | Per-bank repos extend them |
+| Deployment | On-prem, Docker | Bank controls their infra |
+| Repo structure | Single Nx monorepo | No package distribution needed — one bank, one codebase |
 
 ---
 
@@ -127,9 +105,9 @@ Corebridge is a digital banking platform that sits on top of legacy core banking
 | Audit trail | PostgreSQL | App-level audit, queryable for backoffice |
 | User sessions & tokens | PostgreSQL | Session tracking |
 | Notification history | PostgreSQL | In-app notification center |
-| App configuration | PostgreSQL | Per-bank feature flags, settings |
+| App configuration | PostgreSQL | Feature flags, settings |
 | Sanctions screening results | Core | Compliance data stays in core |
 
 ---
 
-See also: [02-PACKAGES.md](./02-PACKAGES.md) · [03-REPOS.md](./03-REPOS.md) · [04-API-DESIGN.md](./04-API-DESIGN.md) · [05-DATABASE.md](./05-DATABASE.md) · [06-DEPLOYMENT.md](./06-DEPLOYMENT.md) · [07-SECURITY.md](./07-SECURITY.md) · [08-AI-WORKFLOW.md](./08-AI-WORKFLOW.md)
+See also: [02-STRUCTURE.md](./02-STRUCTURE.md) · [03-REPO.md](./03-REPO.md) · [04-API-DESIGN.md](./04-API-DESIGN.md) · [05-DATABASE.md](./05-DATABASE.md) · [06-DEPLOYMENT.md](./06-DEPLOYMENT.md) · [07-SECURITY.md](./07-SECURITY.md) · [08-AI-WORKFLOW.md](./08-AI-WORKFLOW.md) · [09-BUSINESS-OPERATIONS.md](./09-BUSINESS-OPERATIONS.md)

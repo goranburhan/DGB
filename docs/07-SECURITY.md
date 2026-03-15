@@ -51,7 +51,7 @@ Mobile App                     API                        Core
 
 ## Performance Targets
 
-- 10K-30K concurrent requests per minute per bank
+- 10K-30K concurrent requests per minute
 - < 500ms for read operations
 - < 2s for core-dependent operations
 

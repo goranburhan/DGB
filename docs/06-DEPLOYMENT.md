@@ -2,7 +2,7 @@
 
 ---
 
-## Infrastructure per Bank
+## Infrastructure
 
 ```
 Bank's On-Prem Server(s)
@@ -47,7 +47,7 @@ services:
       replicas: 2
 
   backoffice:
-    build: ./corebridge-backoffice
+    build: ./apps/backoffice
     ports: ["8080:80"]
     restart: always
 
@@ -93,23 +93,20 @@ volumes:
 ## CI/CD Pipeline
 
 ```
-Developer pushes to corebridge-backend
+Developer pushes to main
     │
     ▼
 GitHub Actions
     ├── 1. Lint + Type Check
-    ├── 2. Run integration tests
+    ├── 2. Run tests
     ├── 3. Validate OpenAPI spec matches Swagger output
-    ├── 4. Build all @corebridge/* packages
-    ├── 5. Publish to GitHub Packages
-    ├── 6. Build Docker image
-    └── 7. Push to private Docker registry
+    ├── 4. Build all libs + apps
+    ├── 5. Build Docker image
+    └── 6. Push to private Docker registry
 
-Bank deployment:
-    ├── Bank's CI pulls latest @corebridge/* packages
-    ├── Bank's repo builds with customizations
-    ├── Docker image built with bank-specific config
-    └── Deployed to bank's on-prem via SSH / Ansible / manual
+Deployment to bank:
+    ├── Pull latest Docker image
+    └── Deploy via SSH / Ansible / manual
 ```
 
 ---
@@ -119,7 +116,7 @@ Bank deployment:
 | Environment | Purpose | Where |
 |-------------|---------|-------|
 | Local dev | Development | Developer's machine (docker-compose) |
-| Staging | Pre-deployment testing | Corebridge office or cloud VM |
+| Staging | Pre-deployment testing | Office or cloud VM |
 | Bank staging | Integration testing | Bank's on-prem (test core) |
 | Bank production | Live | Bank's on-prem (live core) |
 
@@ -151,8 +148,6 @@ Managed via Docker secrets or `.env` files mounted as volumes.
 | MinIO objects | Sync to secondary storage | Daily |
 | Docker volumes | Volume backup scripts | Daily |
 | Configuration | Git (version controlled) | Every change |
-
-Corebridge provides scripts and cron jobs. Bank executes them.
 
 ---
 

@@ -100,21 +100,21 @@ GET    /api/v1/backoffice/audit                      ← Audit log (filtered, pa
 
 ## Pagination
 
-Cursor-based for all list endpoints. Cursor is an opaque base64 string — client never parses it, just passes it back for next page. Works with real-time core data where offset would break.
+Cursor-based for all list endpoints. Cursor is an opaque base64 string — client never parses it, just passes it back. Works with real-time core data where offset would break.
 
 ---
 
 ## Versioning
 
-URL path versioning (`/api/v1/`). Breaking changes get `/api/v2/` for affected endpoints only. Old version stays alive.
+URL path versioning (`/api/v1/`). Breaking changes get `/api/v2/` for affected endpoints only.
 
 ---
 
 ## Swagger / OpenAPI
 
-Every endpoint documented via NestJS Swagger decorators. Generated spec must match `corebridge-contracts/openapi.yaml`. CI validates drift — build fails if they diverge.
+Every endpoint documented via NestJS Swagger decorators. Generated spec must match `contracts/openapi.yaml`. CI validates drift.
 
-Swagger UI at `/api/docs` in dev/staging. Disabled in production unless bank opts in.
+Swagger UI at `/api/docs` in dev/staging. Disabled in production unless opted in.
 
 ---
 
@@ -139,4 +139,4 @@ Accept-Language: ar | ku | en     ← Determines response language
 | Accounts (read) | 60 requests | per minute |
 | Backoffice | 120 requests | per minute |
 
-Per-user (by JWT subject). Configurable per bank.
+Per-user (by JWT subject).
