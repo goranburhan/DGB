@@ -11,3 +11,7 @@
 | [07-SECURITY.md](./07-SECURITY.md) | Auth flow, JWT, security measures, performance |
 | [08-AI-WORKFLOW.md](./08-AI-WORKFLOW.md) | Contract-first dev, Figma → agent flow, validation sync, agent handoff |
 | [09-BUSINESS-OPERATIONS.md](./09-BUSINESS-OPERATIONS.md) | Exit strategy, build phases, what makes it sellable |
+
+### Mobile App
+
+| [mobile/](./mobile/README.md) | Mobile app docs — Expo, Redux, navigation, onboarding, auth, features, reusability |
