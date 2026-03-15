@@ -45,7 +45,7 @@ Mobile App                     API                        Core
 | SQL injection | TypeORM parameterized queries |
 | Audit logging | Every sensitive operation logged |
 | Session management | Single active session per device, revocable |
-| Selfie verification | Required for password reset and sensitive operations |
+| Selfie verification | Dynamic, compliance-driven. Required on: (1) password reset, (2) transactions where amount ≥ 250K IQD, (3) transactions to a receiver not paid today. Skipped for low-value familiar transfers (< 250K IQD to a receiver already paid today). |
 
 ---
 

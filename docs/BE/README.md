@@ -11,6 +11,7 @@
 | [07-SECURITY.md](./07-SECURITY.md) | Auth flow, JWT, security measures, performance |
 | [08-AI-WORKFLOW.md](./08-AI-WORKFLOW.md) | Contract-first dev, Figma → agent flow, validation sync, agent handoff |
 | [09-BUSINESS-OPERATIONS.md](./09-BUSINESS-OPERATIONS.md) | Exit strategy, build phases, what makes it sellable |
+| [10-CORE-ADAPTER.md](../10-CORE-ADAPTER.md) | Core adapter deep-dive — ICSFS integration, failure handling, saga pattern, impedance mismatch |
 
 ### Mobile App
 

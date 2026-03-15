@@ -20,13 +20,11 @@ User has no tokens (fresh install, or logged out)
 
 1. Enter phone + password
    └── POST /auth/login → server verifies against core
-   └── Server returns: { requiresSelfie: true }
+   └── Server sends OTP via SMS
 
-2. Selfie + liveness check
-   └── KYC SDK opens → selfie captured
-   └── POST /auth/verify-selfie → server compares with onboarding selfie
-   └── Match → server returns JWT pair (access + refresh)
-   └── No match → error, retry selfie
+2. Enter OTP
+   └── POST /auth/verify-otp → server verifies OTP hash
+   └── Server returns JWT pair (access + refresh)
 
 3. Store tokens in expo-secure-store
 
@@ -144,6 +142,36 @@ expo-secure-store keys:
 ├── customer_id           ← for quick lookups without API call
 └── device_id             ← device fingerprint (persists across reinstalls if possible)
 ```
+
+---
+
+## Transaction Selfie Authorization
+
+Certain transactions require selfie verification before submission (compliance rule).
+The backend evaluates the rule and returns `requiresSelfie` in the transaction pre-check.
+
+**Rule (server-side):**
+- `requiresSelfie = true`  if  amount ≥ 250,000 IQD  OR  receiver not paid today
+- `requiresSelfie = false` if  amount < 250,000 IQD  AND receiver already paid today
+
+**Flow (once transaction pre-check API is built):**
+```
+1. User confirms transaction details
+   └── POST /transactions/pre-check → { requiresSelfie: bool }
+
+2. If requiresSelfie = true:
+   └── KYC SDK opens → selfie + liveness captured
+   └── POST /transactions/submit (includes selfie token)
+   └── Match → transaction proceeds
+   └── No match → error, retry selfie (max 3 attempts)
+
+3. If requiresSelfie = false:
+   └── POST /transactions/submit directly
+```
+
+> **Status:** Transaction pre-check endpoint is pending core integration.
+> The selfie prompt logic on mobile should be built against this contract
+> once the backend is ready.
 
 ---
 

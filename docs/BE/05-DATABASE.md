@@ -53,7 +53,7 @@ CREATE TABLE onboarding_applications (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     phone_number    VARCHAR(20) NOT NULL,
     current_step    VARCHAR(50) NOT NULL,
-    status          VARCHAR(30) NOT NULL,      -- 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'REJECTED'
+    status          VARCHAR(30) NOT NULL,      -- 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'REJECTED', 'FAILED', 'NEEDS_MANUAL_REVIEW'
     personal_info   JSONB,                     -- Encrypted, temporary until sent to core
     documents_ref   JSONB,
     kyc_result      JSONB,
